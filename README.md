@@ -1,6 +1,8 @@
 # Altcoin Generator
 Easiest way to create your own cryptocurrency.
 
+[![Build Status](https://travis-ci.org/javier-lopez/AltcoinGenerator.svg?branch=master)](https://travis-ci.org/javier-lopez/AltcoinGenerator)
+
 ## What does this script do?
 
 This script is an experiment to generate new cryptocurrencies (altcoins) based on litecoin.
