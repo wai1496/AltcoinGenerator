@@ -122,6 +122,19 @@ header()
     printf "\\n"
 }
 
+footer()
+{
+    printfl "DONE"
+    printf  "%s\\n" "Docker containers should be up and running now."
+    printf  "%s\\n" "You may run the following command to check the network status:"
+    printf  "\\n"
+    printf  "%s\\n" "  [$] for i in \$(docker ps -q); do docker exec \$i /${COIN_NAME_LOWER}/src/${COIN_NAME_LOWER}-cli ${CHAIN} getinfo; done"
+    printf  "\\n"
+    printf  "%s\\n" "To ask the nodes to mine some blocks simply run:"
+    printf  "\\n"
+    printf  "%s\\n" "  [$] for i in \$(docker ps -q); do docker exec \$i /${COIN_NAME_LOWER}/src/${COIN_NAME_LOWER}-cli ${CHAIN} generate 2  & done"
+}
+
 docker_build_image()
 {
     printfl "Building Docker Image"
@@ -163,7 +176,7 @@ docker_run()
 docker_stop_nodes()
 {
     printfs "Stopping all docker nodes"
-    for id in $(docker ps -q -a  -f ancestor="${DOCKER_IMAGE_LABEL}"); do
+    for id in $(docker ps -q -a -f ancestor="${DOCKER_IMAGE_LABEL}"); do
         cmd docker stop "${id}"
     done
 }
@@ -171,16 +184,18 @@ docker_stop_nodes()
 docker_remove_nodes()
 {
     printfs "Removing all docker nodes"
-    for id in $(docker ps -q -a  -f ancestor="${DOCKER_IMAGE_LABEL}"); do
+    for id in $(docker ps -q -a -f ancestor="${DOCKER_IMAGE_LABEL}"); do
         cmd docker rm "${id}"
     done
 }
 
 docker_create_network()
 {
-    printfs  "Creating docker network"
     if ! docker network inspect "${DOCKER_IMAGE_LABEL}-network" >/dev/null 2>&1; then
+        printfs  "Creating docker network: '${DOCKER_IMAGE_LABEL}-network'"
         cmd docker network create --subnet="${DOCKER_NETWORK}.0/16" "${DOCKER_IMAGE_LABEL}-network"
+    else
+        printfs  "Docker network '${DOCKER_IMAGE_LABEL}-network' already exists, skipping ..."
     fi
 }
 
@@ -203,6 +218,15 @@ EOF
     fi
 
     cmd docker run --net "${DOCKER_IMAGE_LABEL}-network" --ip "${DOCKER_NETWORK}.${NODE_NUMBER}" -v "${COIN_DIR}/miner-${NODE_NUMBER}:/root/.${COIN_NAME_LOWER}" -v "${COIN_DIR}/${COIN_NAME_LOWER}:/${COIN_NAME_LOWER}" "${DOCKER_IMAGE_LABEL}" /bin/bash -c "${NODE_COMMAND}"
+}
+
+docker_run_nodes()
+{
+    printfs "Running miner docker nodes"
+    docker_run_node 2 "cd /${COIN_NAME_LOWER} ; ./src/${COIN_NAME_LOWER}d ${CHAIN} -listen -noconnect -bind=${DOCKER_NETWORK}.2 -addnode=${DOCKER_NETWORK}.1 -addnode=${DOCKER_NETWORK}.3 -addnode=${DOCKER_NETWORK}.4 -addnode=${DOCKER_NETWORK}.5" &
+    docker_run_node 3 "cd /${COIN_NAME_LOWER} ; ./src/${COIN_NAME_LOWER}d ${CHAIN} -listen -noconnect -bind=${DOCKER_NETWORK}.3 -addnode=${DOCKER_NETWORK}.1 -addnode=${DOCKER_NETWORK}.2 -addnode=${DOCKER_NETWORK}.4 -addnode=${DOCKER_NETWORK}.5" &
+    docker_run_node 4 "cd /${COIN_NAME_LOWER} ; ./src/${COIN_NAME_LOWER}d ${CHAIN} -listen -noconnect -bind=${DOCKER_NETWORK}.4 -addnode=${DOCKER_NETWORK}.1 -addnode=${DOCKER_NETWORK}.2 -addnode=${DOCKER_NETWORK}.3 -addnode=${DOCKER_NETWORK}.5" &
+    docker_run_node 5 "cd /${COIN_NAME_LOWER} ; ./src/${COIN_NAME_LOWER}d ${CHAIN} -listen -noconnect -bind=${DOCKER_NETWORK}.5 -addnode=${DOCKER_NETWORK}.1 -addnode=${DOCKER_NETWORK}.2 -addnode=${DOCKER_NETWORK}.3 -addnode=${DOCKER_NETWORK}.4" &
 }
 
 generate_genesis_block()
@@ -418,7 +442,7 @@ case "$(printf "%s\\n" "${1}" | tr '[:upper:]' '[:lower:]')" in
             rm -f "GenesisH0/${COIN_NAME}"-*.txt
         fi
         for i in $(seq 2 5); do
-           rm -rf "miner${i}"
+           rm -rf "miner-${i}"
         done
     ;;
     sta*)
@@ -433,20 +457,8 @@ case "$(printf "%s\\n" "${1}" | tr '[:upper:]' '[:lower:]')" in
         newcoin_replace_vars
         build_new_coin
         docker_create_network
-
-        docker_run_node 2 "cd /${COIN_NAME_LOWER} ; ./src/${COIN_NAME_LOWER}d ${CHAIN} -listen -noconnect -bind=${DOCKER_NETWORK}.2 -addnode=${DOCKER_NETWORK}.1 -addnode=${DOCKER_NETWORK}.3 -addnode=${DOCKER_NETWORK}.4 -addnode=${DOCKER_NETWORK}.5" &
-        docker_run_node 3 "cd /${COIN_NAME_LOWER} ; ./src/${COIN_NAME_LOWER}d ${CHAIN} -listen -noconnect -bind=${DOCKER_NETWORK}.3 -addnode=${DOCKER_NETWORK}.1 -addnode=${DOCKER_NETWORK}.2 -addnode=${DOCKER_NETWORK}.4 -addnode=${DOCKER_NETWORK}.5" &
-        docker_run_node 4 "cd /${COIN_NAME_LOWER} ; ./src/${COIN_NAME_LOWER}d ${CHAIN} -listen -noconnect -bind=${DOCKER_NETWORK}.4 -addnode=${DOCKER_NETWORK}.1 -addnode=${DOCKER_NETWORK}.2 -addnode=${DOCKER_NETWORK}.3 -addnode=${DOCKER_NETWORK}.5" &
-        docker_run_node 5 "cd /${COIN_NAME_LOWER} ; ./src/${COIN_NAME_LOWER}d ${CHAIN} -listen -noconnect -bind=${DOCKER_NETWORK}.5 -addnode=${DOCKER_NETWORK}.1 -addnode=${DOCKER_NETWORK}.2 -addnode=${DOCKER_NETWORK}.3 -addnode=${DOCKER_NETWORK}.4" &
-
-        echo "Docker containers should be up and running now."
-        echo "You may run the following command to check the network status:"
-        echo
-        echo "for i in \$(docker ps -q); do docker exec \$i /${COIN_NAME_LOWER}/src/${COIN_NAME_LOWER}-cli ${CHAIN} getinfo; done"
-        echo
-        echo "To ask the nodes to mine some blocks simply run:"
-        echo
-        echo "for i in \$(docker ps -q); do docker exec \$i /${COIN_NAME_LOWER}/src/${COIN_NAME_LOWER}-cli ${CHAIN} generate 2  & done"
+        docker_run_nodes; sleep 3
+        footer
     ;;
     *)
         cat <<EOF
