@@ -61,21 +61,21 @@ printfl()
     _printfl__max_len="$(stty size | awk '{print $2; exit}' 2>/dev/null)" || _printfl__max_len="80"
     if [ -n "${1}" ]; then
         _printfl__word_len="$((${#1} + 2))"
-        _printfl__sub="$((${_printfl__max_len} - ${_printfl__word_len}))"
-        _printfl__half="$((${_printfl__sub} / 2))"
-        _printfl__other_half="$((${_printfl__sub} - ${_printfl__half}))"
-        printf "%b" "\033[1m" #white strong
+        _printfl__sub="$((_printfl__max_len - _printfl__word_len))"
+        _printfl__half="$((_printfl__sub / 2))"
+        _printfl__other_half="$((_printfl__sub - _printfl__half))"
+        printf "%b" "\\033[1m" #white strong
         printf '%*s' "${_printfl__half}" '' | tr ' ' -
-        printf "%b" "\033[7m" #white background
+        printf "%b" "\\033[7m" #white background
         printf " %s " "${1}"
-        printf "%b" "\033[0m\033[1m" #white strong
+        printf "%b" "\\033[0m\\033[1m" #white strong
         printf '%*s' "${_printfl__other_half}" '' | tr ' ' -
-        printf "%b" "\033[0m" #back to normal
+        printf "%b" "\\033[0m" #back to normal
         printf "\\n"
     else
-        printf "%b" "\033[1m" #white strong
+        printf "%b" "\\033[1m" #white strong
         printf '%*s' "${_printfl__max_len}" '' | tr ' ' -
-        printf "%b" "\033[0m" #back to normal
+        printf "%b" "\\033[0m" #back to normal
         printf "\\n"
     fi
 }
@@ -83,21 +83,21 @@ printfl()
 printfs()
 {
     [ -z "${1}" ] && return 1
-    printf "%b\\n" "\033[1m>>>> ${*}\033[0m"
+    printf "%b\\n" "\\033[1m>>>> ${*}\\033[0m"
 }
 
 cmd()
 {
     [ -z "${1}" ] && return 1
     printf "%s\\n" "[$] $*"
-    LAST_CMD="${*}"
+    #LAST_CMD="${*}"
     "$@"
 }
 
 printfv()
 {
     [ -z "${1}" ] && return 1
-    printf "%b\\n" "\033[1m ${1}\033[0m ${2}"
+    printf "%b\\n" "\\033[1m ${1}\\033[0m ${2}"
 }
 
 header()
@@ -303,54 +303,54 @@ newcoin_replace_vars()
 
         # now replace all litecoin references to the new coin name
         for i in $(find . -type f | grep -v "^./.git"); do
-            cmd $SED -i "s/Litecoin/${COIN_NAME}/g" "${i}"
-            cmd $SED -i "s/litecoin/${COIN_NAME_LOWER}/g" "${i}"
-            cmd $SED -i "s/LITECOIN/${COIN_NAME_UPPER}/g" "${i}"
-            cmd $SED -i "s/LTC/${COIN_UNIT}/g" "${i}"
+            cmd "${SED}" -i "s/Litecoin/${COIN_NAME}/g" "${i}"
+            cmd "${SED}" -i "s/litecoin/${COIN_NAME_LOWER}/g" "${i}"
+            cmd "${SED}" -i "s/LITECOIN/${COIN_NAME_UPPER}/g" "${i}"
+            cmd "${SED}" -i "s/LTC/${COIN_UNIT}/g" "${i}"
         done
 
-        cmd $SED -i "s/84000000/${TOTAL_SUPPLY}/" src/amount.h
-        cmd $SED -i "s/1,48/1,${PUBKEY_CHAR}/"    src/chainparams.cpp
+        cmd "${SED}" -i "s/84000000/${TOTAL_SUPPLY}/" src/amount.h
+        cmd "${SED}" -i "s/1,48/1,${PUBKEY_CHAR}/"    src/chainparams.cpp
 
-        cmd $SED -i "s/1317972665/${TIMESTAMP}/"  src/chainparams.cpp
+        cmd "${SED}" -i "s/1317972665/${TIMESTAMP}/"  src/chainparams.cpp
 
-        cmd $SED -i "s;NY Times 05/Oct/2011 Steve Jobs, Apple’s Visionary, Dies at 56;${PHRASE};" src/chainparams.cpp
+        cmd "${SED}" -i "s;NY Times 05/Oct/2011 Steve Jobs, Apple’s Visionary, Dies at 56;${PHRASE};" src/chainparams.cpp
 
-        cmd $SED -i "s/= 9333;/= ${MAINNET_PORT};/"  src/chainparams.cpp
-        cmd $SED -i "s/= 19335;/= ${TESTNET_PORT};/" src/chainparams.cpp
+        cmd "${SED}" -i "s/= 9333;/= ${MAINNET_PORT};/"  src/chainparams.cpp
+        cmd "${SED}" -i "s/= 19335;/= ${TESTNET_PORT};/" src/chainparams.cpp
 
-        cmd $SED -i "s/${LITECOIN_PUB_KEY}/${MAIN_PUB_KEY}/"    src/chainparams.cpp
-        cmd $SED -i "s/${LITECOIN_MERKLE_HASH}/${MERKLE_HASH}/" src/chainparams.cpp
-        cmd $SED -i "s/${LITECOIN_MERKLE_HASH}/${MERKLE_HASH}/" src/qt/test/rpcnestedtests.cpp
+        cmd "${SED}" -i "s/${LITECOIN_PUB_KEY}/${MAIN_PUB_KEY}/"    src/chainparams.cpp
+        cmd "${SED}" -i "s/${LITECOIN_MERKLE_HASH}/${MERKLE_HASH}/" src/chainparams.cpp
+        cmd "${SED}" -i "s/${LITECOIN_MERKLE_HASH}/${MERKLE_HASH}/" src/qt/test/rpcnestedtests.cpp
 
-        cmd $SED -i "0,/${LITECOIN_MAIN_GENESIS_HASH}/s//${MAIN_GENESIS_HASH}/"       src/chainparams.cpp
-        cmd $SED -i "0,/${LITECOIN_TEST_GENESIS_HASH}/s//${TEST_GENESIS_HASH}/"       src/chainparams.cpp
-        cmd $SED -i "0,/${LITECOIN_REGTEST_GENESIS_HASH}/s//${REGTEST_GENESIS_HASH}/" src/chainparams.cpp
+        cmd "${SED}" -i "0,/${LITECOIN_MAIN_GENESIS_HASH}/s//${MAIN_GENESIS_HASH}/"       src/chainparams.cpp
+        cmd "${SED}" -i "0,/${LITECOIN_TEST_GENESIS_HASH}/s//${TEST_GENESIS_HASH}/"       src/chainparams.cpp
+        cmd "${SED}" -i "0,/${LITECOIN_REGTEST_GENESIS_HASH}/s//${REGTEST_GENESIS_HASH}/" src/chainparams.cpp
 
-        cmd $SED -i "0,/2084524493/s//${MAIN_NONCE}/"                   src/chainparams.cpp
-        cmd $SED -i "0,/293345/s//${TEST_NONCE}/"                       src/chainparams.cpp
-        cmd $SED -i "0,/1296688602, 0/s//1296688602, ${REGTEST_NONCE}/" src/chainparams.cpp
-        cmd $SED -i "0,/0x1e0ffff0/s//${BITS}/"                         src/chainparams.cpp
+        cmd "${SED}" -i "0,/2084524493/s//${MAIN_NONCE}/"                   src/chainparams.cpp
+        cmd "${SED}" -i "0,/293345/s//${TEST_NONCE}/"                       src/chainparams.cpp
+        cmd "${SED}" -i "0,/1296688602, 0/s//1296688602, ${REGTEST_NONCE}/" src/chainparams.cpp
+        cmd "${SED}" -i "0,/0x1e0ffff0/s//${BITS}/"                         src/chainparams.cpp
 
-        cmd $SED -i "s,vSeeds.push_back,//vSeeds.push_back,g" src/chainparams.cpp
+        cmd "${SED}" -i "s,vSeeds.push_back,//vSeeds.push_back,g" src/chainparams.cpp
 
         if [ -n "${PREMINED_AMOUNT}" ]; then
-            cmd $SED -i "s/CAmount nSubsidy = 50 \\* COIN;/if \\(nHeight == 1\\) return COIN \\* ${PREMINED_AMOUNT};\\n    CAmount nSubsidy = 50 \\* COIN;/" src/validation.cpp
+            cmd "${SED}" -i "s/CAmount nSubsidy = 50 \\* COIN;/if \\(nHeight == 1\\) return COIN \\* ${PREMINED_AMOUNT};\\n    CAmount nSubsidy = 50 \\* COIN;/" src/validation.cpp
         fi
 
-        cmd $SED -i "s/COINBASE_MATURITY = 100/COINBASE_MATURITY = ${COINBASE_MATURITY}/" src/consensus/consensus.h
+        cmd "${SED}" -i "s/COINBASE_MATURITY = 100/COINBASE_MATURITY = ${COINBASE_MATURITY}/" src/consensus/consensus.h
 
         # reset minimum chain work to 0
-        cmd $SED -i "s/${MINIMUM_CHAIN_WORK_MAIN}/0x00/" src/chainparams.cpp
-        cmd $SED -i "s/${MINIMUM_CHAIN_WORK_TEST}/0x00/" src/chainparams.cpp
+        cmd "${SED}" -i "s/${MINIMUM_CHAIN_WORK_MAIN}/0x00/" src/chainparams.cpp
+        cmd "${SED}" -i "s/${MINIMUM_CHAIN_WORK_TEST}/0x00/" src/chainparams.cpp
 
         # change bip activation heights
         # bip 34
-        cmd $SED -i "s/710000/0/" src/chainparams.cpp
+        cmd "${SED}" -i "s/710000/0/" src/chainparams.cpp
         # bip 65
-        cmd $SED -i "s/918684/0/" src/chainparams.cpp
+        cmd "${SED}" -i "s/918684/0/" src/chainparams.cpp
         # bip 66
-        cmd $SED -i "s/811879/0/" src/chainparams.cpp
+        cmd "${SED}" -i "s/811879/0/" src/chainparams.cpp
 
         # TODO: fix checkpoints
     )
@@ -398,7 +398,7 @@ if ! command -v "git" >/dev/null 2>&1; then
     exit 1
 fi
 
-case "$(printf "%s\\n" ${1} | tr '[:upper:]' '[:lower:]')" in
+case "$(printf "%s\\n" "${1}" | tr '[:upper:]' '[:lower:]')" in
     sto*)
         docker_stop_nodes
     ;;
