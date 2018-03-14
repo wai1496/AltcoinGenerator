@@ -128,11 +128,11 @@ footer()
     printf  "%s\\n" "Docker containers should be up and running now."
     printf  "%s\\n" "You may run the following command to check the network status:"
     printf  "\\n"
-    printf  "%s\\n" "  [$] for i in \$(docker ps -q); do docker exec \$i /${COIN_NAME_LOWER}/src/${COIN_NAME_LOWER}-cli ${CHAIN} getinfo; done"
+    printf  "%s\\n" "  [$] for i in \$(docker ps -q -f ancestor="${DOCKER_IMAGE_LABEL}"); do docker exec \$i /${COIN_NAME_LOWER}/src/${COIN_NAME_LOWER}-cli ${CHAIN} getinfo; done"
     printf  "\\n"
     printf  "%s\\n" "To ask the nodes to mine some blocks simply run:"
     printf  "\\n"
-    printf  "%s\\n" "  [$] for i in \$(docker ps -q); do docker exec \$i /${COIN_NAME_LOWER}/src/${COIN_NAME_LOWER}-cli ${CHAIN} generate 2  & done"
+    printf  "%s\\n" "  [$] for i in \$(docker ps -q -f ancestor="${DOCKER_IMAGE_LABEL}"); do docker exec \$i /${COIN_NAME_LOWER}/src/${COIN_NAME_LOWER}-cli ${CHAIN} generate 2  & done"
 }
 
 docker_build_image()
@@ -175,7 +175,7 @@ docker_run()
 
 docker_stop_nodes()
 {
-    printfs "Stopping all docker nodes"
+    printfs "Stopping all docker nodes: '${DOCKER_IMAGE_LABEL}'"
     for id in $(docker ps -q -a -f ancestor="${DOCKER_IMAGE_LABEL}"); do
         cmd docker stop "${id}"
     done
@@ -183,7 +183,7 @@ docker_stop_nodes()
 
 docker_remove_nodes()
 {
-    printfs "Removing all docker nodes"
+    printfs "Removing all docker nodes: '${DOCKER_IMAGE_LABEL}'"
     for id in $(docker ps -q -a -f ancestor="${DOCKER_IMAGE_LABEL}"); do
         cmd docker rm "${id}"
     done
@@ -310,6 +310,7 @@ newcoin_replace_vars()
 
     (
         cd "${COIN_DIR}"
+        printfs "Forking to '${COIN_NAME_LOWER}' directory ..."
         cmd git clone -b "${LITECOIN_BRANCH}" litecoin-master "${COIN_NAME_LOWER}"
 
         cd "${COIN_NAME_LOWER}"
@@ -327,22 +328,28 @@ newcoin_replace_vars()
 
         # now replace all litecoin references to the new coin name
         for i in $(find . -type f | grep -v "^./.git"); do
-            cmd "${SED}" -i "s/Litecoin/${COIN_NAME}/g" "${i}"
-            cmd "${SED}" -i "s/litecoin/${COIN_NAME_LOWER}/g" "${i}"
-            cmd "${SED}" -i "s/LITECOIN/${COIN_NAME_UPPER}/g" "${i}"
-            cmd "${SED}" -i "s/LTC/${COIN_UNIT}/g" "${i}"
+            [ -z "${replace_coin_title}" ] && printfs "Replacing coin name 'litecoin' => '${COIN_NAME_LOWER}'" && replace_coin_title=1
+            # ommit too verbose information
+            "${SED}" -i "s/Litecoin/${COIN_NAME}/g" "${i}"
+            "${SED}" -i "s/litecoin/${COIN_NAME_LOWER}/g" "${i}"
+            "${SED}" -i "s/LITECOIN/${COIN_NAME_UPPER}/g" "${i}"
+            "${SED}" -i "s/LTC/${COIN_UNIT}/g" "${i}"
         done
 
+        printfs "Setting up total supply => ${TOTAL_SUPPLY} coins"
         cmd "${SED}" -i "s/84000000/${TOTAL_SUPPLY}/" src/amount.h
-        cmd "${SED}" -i "s/1,48/1,${PUBKEY_CHAR}/"    src/chainparams.cpp
 
+        printfs "Setting up genesis block phrase => '${PHRASE}'"
+        cmd "${SED}" -i "s;NY Times 05/Oct/2011 Steve Jobs, Apple’s Visionary, Dies at 56;${PHRASE};" src/chainparams.cpp
+        cmd "${SED}" -i "s/1,48/1,${PUBKEY_CHAR}/"    src/chainparams.cpp
         cmd "${SED}" -i "s/1317972665/${TIMESTAMP}/"  src/chainparams.cpp
 
-        cmd "${SED}" -i "s;NY Times 05/Oct/2011 Steve Jobs, Apple’s Visionary, Dies at 56;${PHRASE};" src/chainparams.cpp
-
+        printfs "Setting up main net port => '${MAINNET_PORT}'"
         cmd "${SED}" -i "s/= 9333;/= ${MAINNET_PORT};/"  src/chainparams.cpp
+        printfs "Setting up test net port => '${TESTNET_PORT}'"
         cmd "${SED}" -i "s/= 19335;/= ${TESTNET_PORT};/" src/chainparams.cpp
 
+        printfs "Setting up default genesis / markle hashes"
         cmd "${SED}" -i "s/${LITECOIN_PUB_KEY}/${MAIN_PUB_KEY}/"    src/chainparams.cpp
         cmd "${SED}" -i "s/${LITECOIN_MERKLE_HASH}/${MERKLE_HASH}/" src/chainparams.cpp
         cmd "${SED}" -i "s/${LITECOIN_MERKLE_HASH}/${MERKLE_HASH}/" src/qt/test/rpcnestedtests.cpp
@@ -356,19 +363,22 @@ newcoin_replace_vars()
         cmd "${SED}" -i "0,/1296688602, 0/s//1296688602, ${REGTEST_NONCE}/" src/chainparams.cpp
         cmd "${SED}" -i "0,/0x1e0ffff0/s//${BITS}/"                         src/chainparams.cpp
 
+        printfs "Commenting out external seeds"
         cmd "${SED}" -i "s,vSeeds.push_back,//vSeeds.push_back,g" src/chainparams.cpp
 
         if [ -n "${PREMINED_AMOUNT}" ]; then
+            printfs "Setting up default premined coins for 1st block => '${PREMINED_AMOUNT}' coins"
             cmd "${SED}" -i "s/CAmount nSubsidy = 50 \\* COIN;/if \\(nHeight == 1\\) return COIN \\* ${PREMINED_AMOUNT};\\n    CAmount nSubsidy = 50 \\* COIN;/" src/validation.cpp
         fi
 
+        printfs "Setting up coin madurity => '${COINBASE_MATURITY}'"
         cmd "${SED}" -i "s/COINBASE_MATURITY = 100/COINBASE_MATURITY = ${COINBASE_MATURITY}/" src/consensus/consensus.h
 
-        # reset minimum chain work to 0
+        printfs "Resetting minimum chain work => '0'"
         cmd "${SED}" -i "s/${MINIMUM_CHAIN_WORK_MAIN}/0x00/" src/chainparams.cpp
         cmd "${SED}" -i "s/${MINIMUM_CHAIN_WORK_TEST}/0x00/" src/chainparams.cpp
 
-        # change bip activation heights
+        printfs "Resetting bip activation heights => '0'"
         # bip 34
         cmd "${SED}" -i "s/710000/0/" src/chainparams.cpp
         # bip 65
