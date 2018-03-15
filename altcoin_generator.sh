@@ -128,11 +128,11 @@ footer()
     printf  "%s\\n" "Docker containers should be up and running now."
     printf  "%s\\n" "You may run the following command to check the network status:"
     printf  "\\n"
-    printf  "%s\\n" "  [$] for i in \$(docker ps -q -f ancestor="${DOCKER_IMAGE_LABEL}"); do docker exec \$i /${COIN_NAME_LOWER}/src/${COIN_NAME_LOWER}-cli ${CHAIN} getinfo; done"
+    printf  "%s\\n" "  [$] for i in \$(docker ps -q -f ancestor=${DOCKER_IMAGE_LABEL}); do docker exec \$i /${COIN_NAME_LOWER}/src/${COIN_NAME_LOWER}-cli ${CHAIN} getinfo; done"
     printf  "\\n"
     printf  "%s\\n" "To ask the nodes to mine some blocks simply run:"
     printf  "\\n"
-    printf  "%s\\n" "  [$] for i in \$(docker ps -q -f ancestor="${DOCKER_IMAGE_LABEL}"); do docker exec \$i /${COIN_NAME_LOWER}/src/${COIN_NAME_LOWER}-cli ${CHAIN} generate 2  & done"
+    printf  "%s\\n" "  [$] for i in \$(docker ps -q -f ancestor=${DOCKER_IMAGE_LABEL}); do docker exec \$i /${COIN_NAME_LOWER}/src/${COIN_NAME_LOWER}-cli ${CHAIN} generate 2  & done"
 }
 
 docker_build_image()
