@@ -21,7 +21,7 @@ TOTAL_SUPPLY="42000000"
 MAINNET_PORT="54321"
 TESTNET_PORT="54322"
 PHRASE="Some newspaper headline that describes something that happened today"
-# First letter of the wallet address. Check https://en.bitcoin.it/wiki/Base58Check_encoding
+# First letter of the wallet address. Check https://en.bitcoin.it/wiki/List_of_address_prefixes
 PUBKEY_CHAR="20"
 # number of blocks to wait to be able to spend coinbase UTXO's
 COINBASE_MATURITY="100"
