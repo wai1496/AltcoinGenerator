@@ -33,6 +33,8 @@ CHAIN="-regtest"
 # use https://www.bitaddress.org/ to generate a new pubkey or run python ./wallet-generator.py and copy the Public Key: string
 GENESIS_REWARD_PUBKEY="044e0d4bc823e20e14d66396a64960c993585400c53f1e6decb273f249bfeba0e71f140ffa7316f2cdaaae574e7d72620538c3e7791ae9861dfe84dd2955fc85e8"
 
+CLIENT_VERSION="1.0.0.0"
+
 # dont change the following variables unless you know what you are doing
 LITECOIN_BRANCH="0.14"
 GENESISHZERO_REPOS="https://github.com/lhartikk/GenesisH0"
@@ -51,7 +53,6 @@ COIN_DIR="${CURRENT_DIR}/${COIN_NAME_LOWER}"
 DOCKER_NETWORK="172.18.0"
 DOCKER_IMAGE_LABEL="${COIN_NAME_LOWER}"
 OSVERSION="$(uname -s)"
-VERSION="0.0.1"
 SECS="15"
 
 set -e #exit on error
@@ -104,17 +105,19 @@ header()
 {
     clear
     printfl "Altcoin Generator"
-    printfv "Version:" "${VERSION}"
+    printf "\\n"
     printfv "Updates:" "https://github.com/tiagosh/AltcoinGenerator"
     printf "\\n"
     printf "%s\\n" "Current configuration (edit the script to change it):"
     printf "\\n"
     printfv "Coin Name     :" "${COIN_NAME} / ${COIN_UNIT}"
     printfv "Total Supply  :" "${TOTAL_SUPPLY}"
+    printfv "Premined coins:" "${PREMINED_AMOUNT:-none}"
     printfv "Base Maturity :" "${COINBASE_MATURITY}"
     printfv "Main NET Port :" "${MAINNET_PORT}"
     printfv "Test NET Port :" "${TESTNET_PORT}"
-    printfv "Default Chain :" "${CHAIN}"
+    printfv "Default Chain :" "${CHAIN:-main}"
+    printfv "Client Version:" "${CLIENT_VERSION} / Copyright $(date +%Y)"
     printfv "Genesis Reward PubKey:" "${GENESIS_REWARD_PUBKEY}"
     printf "\\n"
     printf "%s" "Continuing in ${SECS} seconds, press Ctrl-c to cancel the operation ..."
@@ -385,6 +388,17 @@ newcoin_replace_vars()
         cmd "${SED}" -i "s/918684/0/" src/chainparams.cpp
         # bip 66
         cmd "${SED}" -i "s/811879/0/" src/chainparams.cpp
+
+        printfs "Setting client version => '${CLIENT_VERSION}'"
+        CLIENT_VERSION_MAJOR="$(printf "%s\\n" "${CLIENT_VERSION}"    | cut -d. -f1)"
+        CLIENT_VERSION_MINOR="$(printf "%s\\n" "${CLIENT_VERSION}"    | cut -d. -f2)"
+        CLIENT_VERSION_REVISION="$(printf "%s\\n" "${CLIENT_VERSION}" | cut -d. -f3)"
+        CLIENT_VERSION_BUILD="$(printf "%s\\n" "${CLIENT_VERSION}"    | cut -d. -f4)"
+        cmd "${SED}" -i "s/define(_CLIENT_VERSION_MAJOR.*/define\\(_CLIENT_VERSION_MAJOR, ${CLIENT_VERSION_MAJOR}\\)/" configure.ac
+        cmd "${SED}" -i "s/define(_CLIENT_VERSION_MINOR.*/define\\(_CLIENT_VERSION_MINOR, ${CLIENT_VERSION_MINOR}\\)/" configure.ac
+        cmd "${SED}" -i "s/define(_CLIENT_VERSION_REVISION.*/define\\(_CLIENT_VERSION_REVISION, ${CLIENT_VERSION_REVISION}\\)/" configure.ac
+        cmd "${SED}" -i "s/define(_CLIENT_VERSION_BUILD.*/define\\(_CLIENT_VERSION_BUILD, ${CLIENT_VERSION_BUILD}\\)/" configure.ac
+        cmd "${SED}" -i "s/define(_COPYRIGHT_YEAR,.*/define\\(_COPYRIGHT_YEAR, $(date +%Y)\\)/" configure.ac
 
         # TODO: fix checkpoints
     )
