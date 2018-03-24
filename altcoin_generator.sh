@@ -389,6 +389,14 @@ newcoin_replace_vars()
         # bip 66
         cmd "${SED}" -i "s/811879/0/" src/chainparams.cpp
 
+        printfs "Resetting checkpoints"
+        cmd "${SED}" -i -n -e "/boost::assign::map_list_of/{" -e "p" -e ":a" -e "N" -e "/};/!ba" -e "s/.*\n//" -e "}" -e "p" src/chainparams.cpp
+        cmd "${SED}" -i '/boost::assign::map_list_of/a\            (0, uint256S("0x"))' src/chainparams.cpp
+        cmd "${SED}" -i -n -e "/chainTxData = ChainTxData/{" -e "p" -e ":a" -e "N" -e "/};/!ba" -e "s/.*\n//" -e "}" -e "p"  src/chainparams.cpp
+        cmd "${SED}" -i '/chainTxData = ChainTxData/a\            0,0,0' src/chainparams.cpp
+        #if PREMINED_AMOUNT > 0 checkpoints should point to those first block
+        #https://vcoin-project.github.io/cloning-litecoin/ => Checkpointing the premine.
+
         printfs "Setting client version => '${CLIENT_VERSION}'"
         CLIENT_VERSION_MAJOR="$(printf "%s\\n" "${CLIENT_VERSION}"    | cut -d. -f1)"
         CLIENT_VERSION_MINOR="$(printf "%s\\n" "${CLIENT_VERSION}"    | cut -d. -f2)"
@@ -399,8 +407,6 @@ newcoin_replace_vars()
         cmd "${SED}" -i "s/define(_CLIENT_VERSION_REVISION.*/define\\(_CLIENT_VERSION_REVISION, ${CLIENT_VERSION_REVISION}\\)/" configure.ac
         cmd "${SED}" -i "s/define(_CLIENT_VERSION_BUILD.*/define\\(_CLIENT_VERSION_BUILD, ${CLIENT_VERSION_BUILD}\\)/" configure.ac
         cmd "${SED}" -i "s/define(_COPYRIGHT_YEAR,.*/define\\(_COPYRIGHT_YEAR, $(date +%Y)\\)/" configure.ac
-
-        # TODO: fix checkpoints
     )
 }
 
