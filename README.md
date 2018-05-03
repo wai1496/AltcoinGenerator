@@ -1,7 +1,7 @@
 # Altcoin Generator
 Easiest way to create your own cryptocurrency.
 
-[![Build Status](https://travis-ci.org/javier-lopez/AltcoinGenerator.svg?branch=master)](https://travis-ci.org/javier-lopez/AltcoinGenerator)
+[![Build Status](https://travis-ci.org/wai1496/AltcoinGenerator.svg?branch=master)](https://travis-ci.org/wai1496/AltcoinGenerator)
 
 ## What does this script do?
 
